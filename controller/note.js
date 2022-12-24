@@ -1,4 +1,5 @@
 const Note = require("../models/note")
+const Contact = require("../models/contact")
 
 const getAllNotes = async (req, res) => {
     const allNotes = await Note.find().populate("idContact", {
@@ -17,12 +18,26 @@ const getNote = async (req, res) => {
 const addNote = async (req, res) => {
     const { title, text, date, idContact } = req.body;
     const newNote = await Note.create({ title, text, date, idContact });
+    await Contact.findByIdAndUpdate(idContact, {
+        $push: {
+            notes: newNote._id
+        }
+    }, {
+        new: true
+    })
     res.status(201).json(newNote);
 }
 
 const deleteNote = async (req, res) => {
     const { id } = req.params;
     const deletedNote = await Note.findByIdAndRemove(id);
+    await Contact.findByIdAndUpdate(deletedNote.idContact, {
+        $pull: {
+            notes: deleteNote._id
+        }
+    }, {
+        new: true
+    })
     res.json(deletedNote);
 }
 
